@@ -849,11 +849,14 @@
                 let startX = 0;
                 let currentX = 0;
                 let isDragging = false;
+                let hasMoved = false;
                 const exerciseId = card.dataset.exerciseId;
 
                 card.addEventListener('touchstart', (e) => {
                     startX = e.touches[0].clientX;
+                    currentX = startX; // Initialize currentX to startX
                     isDragging = true;
+                    hasMoved = false;
                     card.classList.add('swiping');
                 });
 
@@ -862,6 +865,7 @@
                     
                     currentX = e.touches[0].clientX;
                     const deltaX = currentX - startX;
+                    hasMoved = true;
                     
                     // Apply transform
                     card.style.transform = `translateX(${deltaX}px)`;
@@ -892,6 +896,10 @@
                     else if (deltaX < -100) {
                         quickMarkExercise(exerciseId, 'skipped');
                     }
+                    // If no significant movement, treat as tap
+                    else if (!hasMoved || Math.abs(deltaX) < 10) {
+                        openExerciseModal(exerciseId);
+                    }
                     
                     // Reset card position
                     card.style.transform = '';
@@ -900,14 +908,8 @@
                     card.querySelector('.swipe-action-right').style.opacity = '0';
                     
                     isDragging = false;
+                    hasMoved = false;
                     currentX = 0;
-                });
-
-                // Click to open modal (only if not swiping)
-                card.addEventListener('click', (e) => {
-                    if (Math.abs(currentX - startX) < 10) {
-                        openExerciseModal(exerciseId);
-                    }
                 });
             });
         }
