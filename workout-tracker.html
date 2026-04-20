@@ -847,14 +847,18 @@
             
             cards.forEach(card => {
                 let startX = 0;
+                let startY = 0;
                 let currentX = 0;
+                let currentY = 0;
                 let isDragging = false;
                 let hasMoved = false;
                 const exerciseId = card.dataset.exerciseId;
 
                 card.addEventListener('touchstart', (e) => {
                     startX = e.touches[0].clientX;
-                    currentX = startX; // Initialize currentX to startX
+                    startY = e.touches[0].clientY;
+                    currentX = startX;
+                    currentY = startY;
                     isDragging = true;
                     hasMoved = false;
                     card.classList.add('swiping');
@@ -864,10 +868,27 @@
                     if (!isDragging) return;
                     
                     currentX = e.touches[0].clientX;
+                    currentY = e.touches[0].clientY;
                     const deltaX = currentX - startX;
+                    const deltaY = currentY - startY;
+                    
+                    // Check if this is a vertical scroll (Y movement > X movement)
+                    if (Math.abs(deltaY) > Math.abs(deltaX)) {
+                        // User is scrolling vertically, don't interfere
+                        card.style.transform = '';
+                        card.querySelector('.swipe-action-left').style.opacity = '0';
+                        card.querySelector('.swipe-action-right').style.opacity = '0';
+                        return;
+                    }
+                    
                     hasMoved = true;
                     
-                    // Apply transform
+                    // Prevent page scroll while swiping horizontally
+                    if (Math.abs(deltaX) > 10) {
+                        e.preventDefault();
+                    }
+                    
+                    // Apply transform for horizontal swipe
                     card.style.transform = `translateX(${deltaX}px)`;
                     
                     // Show appropriate action indicator
@@ -887,6 +908,16 @@
                     if (!isDragging) return;
                     
                     const deltaX = currentX - startX;
+                    const deltaY = currentY - startY;
+                    
+                    // If this was primarily a vertical scroll, don't do anything
+                    if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 10) {
+                        card.style.transform = '';
+                        card.classList.remove('swiping');
+                        isDragging = false;
+                        hasMoved = false;
+                        return;
+                    }
                     
                     // Swipe right = complete
                     if (deltaX > 100) {
@@ -897,7 +928,7 @@
                         quickMarkExercise(exerciseId, 'skipped');
                     }
                     // If no significant movement, treat as tap
-                    else if (!hasMoved || Math.abs(deltaX) < 10) {
+                    else if (!hasMoved || (Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10)) {
                         openExerciseModal(exerciseId);
                     }
                     
@@ -910,6 +941,7 @@
                     isDragging = false;
                     hasMoved = false;
                     currentX = 0;
+                    currentY = 0;
                 });
             });
         }
