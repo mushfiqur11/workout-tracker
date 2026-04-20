@@ -21,6 +21,7 @@
     <link rel="manifest" href="manifest.json">
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -410,7 +411,7 @@
 
         .stats-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 15px;
             margin: 20px 0;
         }
@@ -525,6 +526,54 @@
             color: var(--text-primary);
         }
 
+        .calendar-heatmap {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            margin-top: 10px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            border: 1px solid var(--border);
+        }
+
+        .calendar-day.has-workout {
+            background: var(--success);
+            border-color: var(--success);
+        }
+
+        .calendar-day.partial-workout {
+            background: var(--warning);
+            border-color: var(--warning);
+        }
+
+        .calendar-day.today {
+            border: 2px solid var(--accent);
+        }
+
+        .day-label-text {
+            font-size: 9px;
+            color: var(--text-secondary);
+        }
+
+        .day-number {
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto !important;
+        }
+
         @media (max-width: 480px) {
             .container {
                 padding: 15px;
@@ -541,6 +590,10 @@
             .stats-grid {
                 grid-template-columns: 1fr;
             }
+
+            .calendar-day {
+                font-size: 10px;
+            }
         }
     </style>
 </head>
@@ -549,6 +602,14 @@
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="3"></circle>
             <path d="M12 1v6m0 6v6m-6-6h6m6 0h6m-2.8-5.2l-4.2 4.2m-6 0L4.8 6.8m0 10.4l4.2-4.2m6 0l4.2 4.2"></path>
+        </svg>
+    </div>
+
+    <div class="analytics-icon" onclick="showAnalytics()" style="position: fixed; top: 20px; right: 80px; width: 44px; height: 44px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 100;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="20" x2="12" y2="10"></line>
+            <line x1="18" y1="20" x2="18" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="16"></line>
         </svg>
     </div>
 
@@ -586,6 +647,11 @@
                 <div class="stat-card">
                     <div class="stat-value" id="currentStreak">0</div>
                     <div class="stat-label">Day Streak</div>
+                </div>
+                <div class="stat-card" onclick="showWeightLogger()" style="cursor: pointer; border: 2px solid var(--accent);">
+                    <div class="stat-value" id="currentBodyWeight">--</div>
+                    <div class="stat-label">Body Weight</div>
+                    <div style="font-size: 11px; color: var(--accent); margin-top: 5px;">Tap to log</div>
                 </div>
             </div>
         </div>
@@ -711,6 +777,116 @@
         </div>
     </div>
 
+    <!-- Analytics Modal -->
+    <div class="modal" id="analyticsModal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2 class="modal-title">📊 Analytics & Progress</h2>
+            </div>
+
+            <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 20px;">
+                <div class="stat-card">
+                    <div class="stat-value" id="analyticsWorkouts">0</div>
+                    <div class="stat-label">Workouts</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="analyticsStreak">0</div>
+                    <div class="stat-label">Streak</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="analyticsCompletion">0%</div>
+                    <div class="stat-label">Completion</div>
+                </div>
+            </div>
+
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="switchAnalyticsTab('overview')">Overview</button>
+                <button class="nav-tab" onclick="switchAnalyticsTab('weights')">Weight Progress</button>
+                <button class="nav-tab" onclick="switchAnalyticsTab('bodyweight')">Body Weight</button>
+                <button class="nav-tab" onclick="switchAnalyticsTab('calendar')">Calendar</button>
+            </div>
+
+            <div id="overviewTab">
+                <h3 style="margin: 20px 0 10px 0; font-size: 16px;">Workout Frequency</h3>
+                <canvas id="frequencyChart" width="400" height="200"></canvas>
+
+                <h3 style="margin: 20px 0 10px 0; font-size: 16px;">Completion Rate by Day Type</h3>
+                <canvas id="completionChart" width="400" height="200"></canvas>
+            </div>
+
+            <div id="weightsTab" style="display: none;">
+                <div style="margin-bottom: 15px;">
+                    <label style="font-size: 14px; margin-bottom: 8px; display: block;">Select Exercise:</label>
+                    <select id="exerciseSelect" onchange="renderWeightProgress()" style="width: 100%; padding: 12px; background: var(--bg-tertiary); border: 2px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: 14px;">
+                        <option value="">Choose an exercise...</option>
+                    </select>
+                </div>
+                <canvas id="weightChart" width="400" height="250"></canvas>
+                <div id="weightStats" style="margin-top: 15px;"></div>
+            </div>
+
+            <div id="bodyweightTab" style="display: none;">
+                <h3 style="margin: 20px 0 10px 0; font-size: 16px;">Your Body Weight Progress</h3>
+
+                <div id="bodyWeightStats" style="margin-bottom: 20px;"></div>
+
+                <h3 style="margin: 20px 0 10px 0; font-size: 16px;">Weight Trend</h3>
+                <canvas id="bodyWeightChart" width="400" height="250"></canvas>
+
+                <div id="bodyWeightHistory" style="margin-top: 20px;"></div>
+            </div>
+
+            <div id="calendarTab" style="display: none;">
+                <h3 style="margin: 20px 0 10px 0; font-size: 16px;">Last 30 Days</h3>
+                <div id="calendarHeatmap"></div>
+            </div>
+
+            <button class="btn btn-secondary" style="width: 100%; margin-top: 20px;" onclick="closeAnalytics()">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <!-- Body Weight Logger Modal -->
+    <div class="modal" id="weightLoggerModal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2 class="modal-title">⚖️ Log Body Weight</h2>
+                <p class="modal-subtitle">Track your weight daily</p>
+            </div>
+
+            <div style="background: var(--bg-tertiary); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                <label style="font-size: 14px; margin-bottom: 8px; display: block; font-weight: 600;">Today's Weight</label>
+                <div style="display: flex; gap: 10px; align-items: flex-end;">
+                    <div style="flex: 1;">
+                        <input type="number" id="quickBodyWeightInput" placeholder="Enter weight..." 
+                               style="width: 100%; padding: 14px; background: var(--bg-secondary); border: 2px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: 18px; font-weight: 600;">
+                    </div>
+                    <div style="width: 80px;">
+                        <select id="quickWeightUnit" style="width: 100%; padding: 14px; background: var(--bg-secondary); border: 2px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: 14px;">
+                            <option value="kg">kg</option>
+                            <option value="lbs">lbs</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div id="recentWeightDisplay" style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 5px;">Last recorded</div>
+                <div id="lastWeightValue" style="font-size: 24px; font-weight: 700;">--</div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <button class="btn btn-secondary" onclick="closeWeightLogger()">Cancel</button>
+                <button class="btn btn-complete" onclick="saveQuickBodyWeight()">Save</button>
+            </div>
+
+            <p style="color: var(--text-secondary); font-size: 12px; margin-top: 15px; text-align: center;">
+                💡 Weigh yourself at the same time each day
+            </p>
+        </div>
+    </div>
+
     <script>
         // Configuration URL - replace this with your GitHub Pages URL
         const CONFIG_URL = './workout-config.json';
@@ -722,6 +898,7 @@
         let workoutHistory = {};
         let hiddenExercises = [];
         let stats = { totalWorkouts: 0, currentStreak: 0 };
+        let bodyWeightHistory = {}; // New: stores body weight data
 
         // Initialize app
         async function init() {
@@ -759,6 +936,11 @@
             if (savedStats) {
                 stats = JSON.parse(savedStats);
             }
+
+            const savedBodyWeight = localStorage.getItem('bodyWeightHistory');
+            if (savedBodyWeight) {
+                bodyWeightHistory = JSON.parse(savedBodyWeight);
+            }
         }
 
         // Save data to localStorage
@@ -766,6 +948,7 @@
             localStorage.setItem('workoutHistory', JSON.stringify(workoutHistory));
             localStorage.setItem('hiddenExercises', JSON.stringify(hiddenExercises));
             localStorage.setItem('workoutStats', JSON.stringify(stats));
+            localStorage.setItem('bodyWeightHistory', JSON.stringify(bodyWeightHistory));
         }
 
         // Get today's date key
@@ -1093,6 +1276,16 @@
         function renderStats() {
             document.getElementById('totalWorkouts').textContent = stats.totalWorkouts;
             document.getElementById('currentStreak').textContent = stats.currentStreak;
+            
+            // Update body weight display
+            const dates = Object.keys(bodyWeightHistory).sort();
+            if (dates.length > 0) {
+                const latestDate = dates[dates.length - 1];
+                const latestWeight = bodyWeightHistory[latestDate];
+                document.getElementById('currentBodyWeight').textContent = `${latestWeight.weight} ${latestWeight.unit}`;
+            } else {
+                document.getElementById('currentBodyWeight').textContent = '--';
+            }
         }
 
         // Settings functions
@@ -1160,6 +1353,7 @@
                 workoutHistory: workoutHistory,
                 hiddenExercises: hiddenExercises,
                 stats: stats,
+                bodyWeightHistory: bodyWeightHistory,
                 exportDate: new Date().toISOString()
             };
             
@@ -1185,6 +1379,7 @@
                         workoutHistory = data.workoutHistory || {};
                         hiddenExercises = data.hiddenExercises || [];
                         stats = data.stats || { totalWorkouts: 0, currentStreak: 0 };
+                        bodyWeightHistory = data.bodyWeightHistory || {};
                         
                         saveData();
                         renderStats();
@@ -1204,6 +1399,7 @@
                     workoutHistory = {};
                     hiddenExercises = [];
                     stats = { totalWorkouts: 0, currentStreak: 0 };
+                    bodyWeightHistory = {};
                     saveData();
                     renderStats();
                     alert('All data has been reset');
@@ -1513,6 +1709,568 @@
 
         // Initialize on page load
         init();
+
+        // Analytics functions
+        let charts = {};
+
+        function showAnalytics() {
+            document.getElementById('analyticsModal').classList.add('active');
+            renderAnalytics();
+        }
+
+        function closeAnalytics() {
+            document.getElementById('analyticsModal').classList.remove('active');
+            // Destroy charts to prevent memory leaks
+            Object.values(charts).forEach(chart => chart?.destroy());
+            charts = {};
+        }
+
+        function switchAnalyticsTab(tab) {
+            document.querySelectorAll('#analyticsModal .nav-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.getElementById('overviewTab').style.display = tab === 'overview' ? 'block' : 'none';
+            document.getElementById('weightsTab').style.display = tab === 'weights' ? 'block' : 'none';
+            document.getElementById('bodyweightTab').style.display = tab === 'bodyweight' ? 'block' : 'none';
+            document.getElementById('calendarTab').style.display = tab === 'calendar' ? 'block' : 'none';
+
+            if (tab === 'overview') {
+                renderOverviewCharts();
+            } else if (tab === 'weights') {
+                populateExerciseDropdown();
+            } else if (tab === 'bodyweight') {
+                renderBodyWeightTab();
+            } else if (tab === 'calendar') {
+                renderCalendarHeatmap();
+            }
+        }
+
+        function renderAnalytics() {
+            // Update summary stats
+            const totalExercises = calculateTotalExercises();
+            const completedExercises = calculateCompletedExercises();
+            const completionRate = totalExercises > 0 ? Math.round((completedExercises / totalExercises) * 100) : 0;
+
+            document.getElementById('analyticsWorkouts').textContent = stats.totalWorkouts;
+            document.getElementById('analyticsStreak').textContent = stats.currentStreak;
+            document.getElementById('analyticsCompletion').textContent = completionRate + '%';
+
+            renderOverviewCharts();
+        }
+
+        function calculateTotalExercises() {
+            let total = 0;
+            Object.values(workoutHistory).forEach(day => {
+                total += Object.keys(day.exercises || {}).length;
+            });
+            return total;
+        }
+
+        function calculateCompletedExercises() {
+            let completed = 0;
+            Object.values(workoutHistory).forEach(day => {
+                Object.values(day.exercises || {}).forEach(ex => {
+                    if (ex.status === 'completed') completed++;
+                });
+            });
+            return completed;
+        }
+
+        function renderOverviewCharts() {
+            // Frequency chart - workouts per week
+            const frequencyData = getWorkoutFrequencyData();
+            
+            if (charts.frequency) charts.frequency.destroy();
+            charts.frequency = new Chart(document.getElementById('frequencyChart'), {
+                type: 'bar',
+                data: {
+                    labels: frequencyData.labels,
+                    datasets: [{
+                        label: 'Workouts',
+                        data: frequencyData.data,
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1, color: '#a0a0a0' },
+                            grid: { color: '#333333' }
+                        },
+                        x: {
+                            ticks: { color: '#a0a0a0' },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+
+            // Completion rate by day type
+            const completionData = getCompletionByDayType();
+            
+            if (charts.completion) charts.completion.destroy();
+            charts.completion = new Chart(document.getElementById('completionChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4'],
+                    datasets: [{
+                        label: 'Completion %',
+                        data: completionData,
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { 
+                                callback: value => value + '%',
+                                color: '#a0a0a0'
+                            },
+                            grid: { color: '#333333' }
+                        },
+                        x: {
+                            ticks: { color: '#a0a0a0' },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        function getWorkoutFrequencyData() {
+            const weeks = {};
+            const dates = Object.keys(workoutHistory).sort();
+            
+            dates.forEach(date => {
+                const weekStart = getWeekStart(new Date(date));
+                weeks[weekStart] = (weeks[weekStart] || 0) + 1;
+            });
+
+            const sortedWeeks = Object.keys(weeks).sort().slice(-8);
+            
+            return {
+                labels: sortedWeeks.map(w => {
+                    const d = new Date(w);
+                    return `${d.getMonth() + 1}/${d.getDate()}`;
+                }),
+                data: sortedWeeks.map(w => weeks[w])
+            };
+        }
+
+        function getWeekStart(date) {
+            const d = new Date(date);
+            const day = d.getDay();
+            const diff = d.getDate() - day;
+            return new Date(d.setDate(diff)).toISOString().split('T')[0];
+        }
+
+        function getCompletionByDayType() {
+            const dayStats = {1: {total: 0, completed: 0}, 2: {total: 0, completed: 0}, 
+                             3: {total: 0, completed: 0}, 4: {total: 0, completed: 0}};
+            
+            Object.values(workoutHistory).forEach(dayData => {
+                const dayNum = dayData.day;
+                if (!dayNum) return;
+                
+                Object.values(dayData.exercises || {}).forEach(ex => {
+                    dayStats[dayNum].total++;
+                    if (ex.status === 'completed') dayStats[dayNum].completed++;
+                });
+            });
+
+            return [1, 2, 3, 4].map(day => {
+                const stats = dayStats[day];
+                return stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
+            });
+        }
+
+        function populateExerciseDropdown() {
+            const select = document.getElementById('exerciseSelect');
+            const exercises = new Set();
+            
+            Object.values(workoutHistory).forEach(day => {
+                Object.keys(day.exercises || {}).forEach(exId => exercises.add(exId));
+            });
+
+            select.innerHTML = '<option value="">Choose an exercise...</option>';
+            
+            Object.values(workoutConfig.days).forEach(day => {
+                day.exercises.forEach(ex => {
+                    if (exercises.has(ex.id)) {
+                        select.innerHTML += `<option value="${ex.id}">${ex.name}</option>`;
+                    }
+                });
+            });
+
+            if (exercises.size > 0) {
+                const firstExercise = Array.from(exercises)[0];
+                select.value = firstExercise;
+                renderWeightProgress();
+            }
+        }
+
+        function renderWeightProgress() {
+            const exerciseId = document.getElementById('exerciseSelect').value;
+            if (!exerciseId) {
+                document.getElementById('weightStats').innerHTML = '<p style="color: var(--text-secondary);">Select an exercise to view progress</p>';
+                return;
+            }
+
+            const data = getWeightProgressData(exerciseId);
+            
+            if (charts.weight) charts.weight.destroy();
+            charts.weight = new Chart(document.getElementById('weightChart'), {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Weight (lbs)',
+                        data: data.weights,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.3,
+                        fill: true,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#3b82f6'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: '#a0a0a0' },
+                            grid: { color: '#333333' }
+                        },
+                        x: {
+                            ticks: { color: '#a0a0a0' },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+
+            // Show stats
+            if (data.weights.length > 0) {
+                const firstWeight = data.weights[0];
+                const lastWeight = data.weights[data.weights.length - 1];
+                const maxWeight = Math.max(...data.weights);
+                const increase = lastWeight - firstWeight;
+                const increasePercent = firstWeight > 0 ? ((increase / firstWeight) * 100).toFixed(1) : 0;
+
+                document.getElementById('weightStats').innerHTML = `
+                    <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+                        <div class="stat-card">
+                            <div class="stat-value" style="font-size: 24px;">${lastWeight}</div>
+                            <div class="stat-label">Current</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" style="font-size: 24px; color: ${increase >= 0 ? 'var(--success)' : 'var(--danger)'}">
+                                ${increase > 0 ? '+' : ''}${increase}
+                            </div>
+                            <div class="stat-label">Progress</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" style="font-size: 24px;">${maxWeight}</div>
+                            <div class="stat-label">Max</div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function getWeightProgressData(exerciseId) {
+            const dates = Object.keys(workoutHistory).sort();
+            const labels = [];
+            const weights = [];
+
+            dates.forEach(date => {
+                const exercise = workoutHistory[date].exercises?.[exerciseId];
+                if (exercise && exercise.weight) {
+                    const d = new Date(date);
+                    labels.push(`${d.getMonth() + 1}/${d.getDate()}`);
+                    weights.push(exercise.weight);
+                }
+            });
+
+            return { labels, weights };
+        }
+
+        function renderCalendarHeatmap() {
+            const today = new Date();
+            const days = [];
+            
+            // Get last 30 days
+            for (let i = 29; i >= 0; i--) {
+                const date = new Date(today);
+                date.setDate(date.getDate() - i);
+                days.push(date);
+            }
+
+            let html = '<div class="calendar-heatmap">';
+            
+            days.forEach(date => {
+                const dateKey = date.toISOString().split('T')[0];
+                const dayData = workoutHistory[dateKey];
+                const isToday = dateKey === getTodayKey();
+                
+                let className = 'calendar-day';
+                if (isToday) className += ' today';
+                
+                if (dayData) {
+                    const exercises = Object.values(dayData.exercises || {});
+                    const completed = exercises.filter(e => e.status === 'completed').length;
+                    const total = exercises.length;
+                    
+                    if (completed === total) {
+                        className += ' has-workout';
+                    } else if (completed > 0) {
+                        className += ' partial-workout';
+                    }
+                }
+
+                html += `
+                    <div class="${className}">
+                        <div class="day-label-text">${['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'][date.getDay()]}</div>
+                        <div class="day-number">${date.getDate()}</div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            document.getElementById('calendarHeatmap').innerHTML = html;
+        }
+
+        // Body Weight Tracking Functions
+        function showWeightLogger() {
+            const today = getTodayKey();
+            
+            // Pre-fill today's weight if already logged
+            if (bodyWeightHistory[today]) {
+                document.getElementById('quickBodyWeightInput').value = bodyWeightHistory[today].weight;
+                document.getElementById('quickWeightUnit').value = bodyWeightHistory[today].unit;
+            } else {
+                // Clear input
+                document.getElementById('quickBodyWeightInput').value = '';
+                // Set default unit from last entry or kg
+                const dates = Object.keys(bodyWeightHistory).sort();
+                if (dates.length > 0) {
+                    const lastUnit = bodyWeightHistory[dates[dates.length - 1]].unit;
+                    document.getElementById('quickWeightUnit').value = lastUnit;
+                } else {
+                    document.getElementById('quickWeightUnit').value = 'kg';
+                }
+            }
+            
+            // Show last recorded weight
+            const dates = Object.keys(bodyWeightHistory).sort();
+            if (dates.length > 0) {
+                const lastDate = dates[dates.length - 1];
+                const lastWeight = bodyWeightHistory[lastDate];
+                const date = new Date(lastDate);
+                const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                document.getElementById('lastWeightValue').textContent = `${lastWeight.weight} ${lastWeight.unit} (${dateStr})`;
+            } else {
+                document.getElementById('lastWeightValue').textContent = 'No data yet';
+            }
+            
+            document.getElementById('weightLoggerModal').classList.add('active');
+            // Focus input for quick entry
+            setTimeout(() => document.getElementById('quickBodyWeightInput').focus(), 100);
+        }
+
+        function closeWeightLogger() {
+            document.getElementById('weightLoggerModal').classList.remove('active');
+        }
+
+        function saveQuickBodyWeight() {
+            const weight = parseFloat(document.getElementById('quickBodyWeightInput').value);
+            const unit = document.getElementById('quickWeightUnit').value;
+            
+            if (!weight || weight <= 0) {
+                alert('Please enter a valid weight');
+                return;
+            }
+
+            const today = getTodayKey();
+            bodyWeightHistory[today] = {
+                weight: weight,
+                unit: unit,
+                timestamp: new Date().toISOString()
+            };
+
+            saveData();
+            renderStats();
+            closeWeightLogger();
+            
+            // Show success feedback
+            const bodyWeightCard = document.getElementById('currentBodyWeight');
+            bodyWeightCard.style.color = 'var(--success)';
+            setTimeout(() => {
+                bodyWeightCard.style.color = '';
+            }, 1000);
+        }
+
+        function renderBodyWeightTab() {
+            const dates = Object.keys(bodyWeightHistory).sort();
+            
+            if (dates.length === 0) {
+                document.getElementById('bodyWeightStats').innerHTML = `
+                    <div style="background: var(--bg-tertiary); padding: 20px; border-radius: 12px; text-align: center;">
+                        <p style="color: var(--text-secondary);">No weight data yet. Log your weight from the homepage!</p>
+                    </div>
+                `;
+                if (charts.bodyWeight) charts.bodyWeight.destroy();
+                document.getElementById('bodyWeightHistory').innerHTML = '';
+                return;
+            }
+
+            // Calculate stats
+            const weights = dates.map(d => bodyWeightHistory[d].weight);
+            const firstWeight = weights[0];
+            const lastWeight = weights[weights.length - 1];
+            const maxWeight = Math.max(...weights);
+            const minWeight = Math.min(...weights);
+            const avgWeight = (weights.reduce((a, b) => a + b, 0) / weights.length).toFixed(1);
+            const change = lastWeight - firstWeight;
+            const changePercent = ((change / firstWeight) * 100).toFixed(1);
+            const unit = bodyWeightHistory[dates[0]].unit;
+
+            // Display stats
+            document.getElementById('bodyWeightStats').innerHTML = `
+                <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr);">
+                    <div class="stat-card">
+                        <div class="stat-value" style="font-size: 28px;">${lastWeight} ${unit}</div>
+                        <div class="stat-label">Current Weight</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" style="font-size: 28px; color: ${change <= 0 ? 'var(--success)' : 'var(--danger)'}">
+                            ${change > 0 ? '+' : ''}${change.toFixed(1)} ${unit}
+                        </div>
+                        <div class="stat-label">Change (${changePercent}%)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" style="font-size: 24px;">${minWeight} ${unit}</div>
+                        <div class="stat-label">Lowest</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" style="font-size: 24px;">${maxWeight} ${unit}</div>
+                        <div class="stat-label">Highest</div>
+                    </div>
+                </div>
+            `;
+
+            // Render chart
+            const labels = dates.map(d => {
+                const date = new Date(d);
+                return `${date.getMonth() + 1}/${date.getDate()}`;
+            });
+
+            if (charts.bodyWeight) charts.bodyWeight.destroy();
+            charts.bodyWeight = new Chart(document.getElementById('bodyWeightChart'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: `Weight (${unit})`,
+                        data: weights,
+                        borderColor: change <= 0 ? '#10b981' : '#ef4444',
+                        backgroundColor: change <= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                        tension: 0.3,
+                        fill: true,
+                        pointRadius: 5,
+                        pointBackgroundColor: change <= 0 ? '#10b981' : '#ef4444',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.parsed.y} ${unit}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: { 
+                                color: '#a0a0a0',
+                                callback: function(value) {
+                                    return value + ' ' + unit;
+                                }
+                            },
+                            grid: { color: '#333333' }
+                        },
+                        x: {
+                            ticks: { color: '#a0a0a0' },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+
+            // Render history
+            let historyHtml = '<h3 style="margin: 20px 0 10px 0; font-size: 16px;">Recent Entries</h3>';
+            const recentDates = dates.slice(-10).reverse();
+            
+            recentDates.forEach(dateKey => {
+                const entry = bodyWeightHistory[dateKey];
+                const date = new Date(dateKey);
+                const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const isToday = dateKey === today;
+
+                historyHtml += `
+                    <div style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; ${isToday ? 'border: 2px solid var(--accent);' : ''}">
+                        <div>
+                            <div style="font-weight: 600;">${dateStr} ${isToday ? '(Today)' : ''}</div>
+                            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                                ${new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div style="font-size: 20px; font-weight: 700;">${entry.weight} ${entry.unit}</div>
+                            <button onclick="deleteBodyWeightEntry('${dateKey}')" style="background: var(--danger); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Delete</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('bodyWeightHistory').innerHTML = historyHtml;
+        }
+
+        function deleteBodyWeightEntry(dateKey) {
+            if (confirm('Delete this weight entry?')) {
+                delete bodyWeightHistory[dateKey];
+                saveData();
+                renderBodyWeightTab();
+            }
+        }
     </script>
 </body>
 </html>
