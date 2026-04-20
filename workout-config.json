@@ -1,0 +1,296 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-04-20",
+  "days": {
+    "day1": {
+      "name": "Chest & Back",
+      "exercises": [
+        {
+          "id": "chest-press",
+          "name": "Chest Press Machine",
+          "sets": 3,
+          "reps": "10-12",
+          "rest": "60s",
+          "notes": "Focus on controlled movement",
+          "videoUrl": "https://www.youtube.com/watch?v=xUm0BiZCWlQ"
+        },
+        {
+          "id": "incline-chest",
+          "name": "Incline Chest Press Machine",
+          "sets": 3,
+          "reps": "10-12",
+          "rest": "60s",
+          "notes": "Targets upper chest",
+          "videoUrl": "https://www.youtube.com/watch?v=IP4oeKxTDsE"
+        },
+        {
+          "id": "pec-deck",
+          "name": "Pec Deck Fly Machine",
+          "sets": 3,
+          "reps": "12-15",
+          "rest": "45s",
+          "notes": "Squeeze at contraction",
+          "videoUrl": "https://www.youtube.com/watch?v=Z57CtFmRMxA"
+        },
+        {
+          "id": "lat-pulldown",
+          "name": "Lat Pulldown Machine",
+          "sets": 3,
+          "reps": "10-12",
+          "rest": "60s",
+          "notes": "Pull to upper chest",
+          "videoUrl": "https://www.youtube.com/watch?v=CAwf7n6Luuc"
+        },
+        {
+          "id": "cable-row",
+          "name": "Seated Cable Row",
+          "sets": 3,
+          "reps": "10-12",
+          "rest": "60s",
+          "notes": "Squeeze shoulder blades",
+          "videoUrl": "https://www.youtube.com/watch?v=GZbfZ033f74"
+        },
+        {
+          "id": "assisted-pullup",
+          "name": "Assisted Pull-up Machine",
+          "sets": 2,
+          "reps": "8-10",
+          "rest": "90s",
+          "notes": "Use assistance as needed",
+          "videoUrl": "https://www.youtube.com/watch?v=8jyhJ6TiUPA"
+        },
+        {
+          "id": "cardio-day1",
+          "name": "Treadmill Walk/Jog",
+          "sets": 1,
+          "reps": "15-20 min",
+          "rest": "-",
+          "notes": "Moderate pace, 3.0-4.5 mph",
+          "videoUrl": "https://www.youtube.com/watch?v=kVnyY17VS9Y"
+        }
+      ]
+    },
+    "day2": {
+      "name": "Legs",
+      "exercises": [
+        {
+          "id": "leg-press",
+          "name": "Leg Press Machine",
+          "sets": 3,
+          "reps": "12-15",
+          "rest": "90s",
+          "notes": "Feet shoulder-width apart",
+          "videoUrl": "https://www.youtube.com/watch?v=IZxyjW7MPJQ"
+        },
+        {
+          "id": "leg-extension",
+          "name": "Leg Extension Machine",
+          "sets": 3,
+          "reps": "12-15",
+          "rest": "60s",
+          "notes": "Control the descent",
+          "videoUrl": "https://www.youtube.com/watch?v=YyvSfVjQeL0"
+        },
+        {
+          "id": "leg-curl",
+          "name": "Leg Curl Machine",
+          "sets": 3,
+          "reps": "12-15",
+          "rest": "60s",
+          "notes": "Keep hips down",
+          "videoUrl": "https://www.youtube.com/watch?v=ELOCsoDSmrg"
+        },
+        {
+          "id": "smith-squat",
+          "name": "Smith Machine Squats",
+          "sets": 3,
+          "reps": "10-12",
+          "rest": "90s",
+          "notes": "Feet slightly forward",
+          "videoUrl": "https://www.youtube.com/watch?v=DzZdIJFTnRw"
+        },
+        {
+          "id": "hip-abductor",
+          "name": "Hip Abductor Machine",
+          "sets": 3,
+          "reps": "15-20",
+          "rest": "45s",
+          "notes": "Strengthens outer thighs",
+          "videoUrl": "https://www.youtube.com/watch?v=7vXEJ5Vev9c"
+        },
+        {
+          "id": "hip-adductor",
+          "name": "Hip Adductor Machine",
+          "sets": 3,
+          "reps": "15-20",
+          "rest": "45s",
+          "notes": "Strengthens inner thighs",
+          "videoUrl": "https://www.youtube.com/watch?v=w_zYzNXI06U"
+        },
+        {
+          "id": "calf-raises",
+          "name": "Standing Calf Raises",
+          "sets": 3,
+          "reps": "15-20",
+          "rest": "45s",
+          "notes": "Full range of motion",
+          "videoUrl": "https://www.youtube.com/watch?v=gwLzBJYoWlI"
+        }
+      ]
+    },
+    "day3": {
+      "name": "Shoulders & Arms",
+      "exercises": [
+        {
+          "id": "shoulder-press",
+          "name": "Shoulder Press Machine",
+          "sets": 3,
+          "reps": "10-12",
+          "rest": "60s",
+          "notes": "Press straight up",
+          "videoUrl": "https://www.youtube.com/watch?v=V60jYHzOxdU"
+        },
+        {
+          "id": "lateral-raise",
+          "name": "Lateral Raise Machine",
+          "sets": 3,
+          "reps": "12-15",
+          "rest": "45s",
+          "notes": "Lift to shoulder height",
+          "videoUrl": "https://www.youtube.com/watch?v=3VcKaXpzqRo"
+        },
+        {
+          "id": "rear-delt",
+          "name": "Rear Delt Fly Machine",
+          "sets": 3,
+          "reps": "12-15",
+          "rest": "45s",
+          "notes": "Focus on rear shoulders",
+          "videoUrl": "https://www.youtube.com/watch?v=T0vV_2dKr4s"
+        },
+        {
+          "id": "bicep-curl",
+          "name": "Dumbbell Bicep Curls",
+          "sets": 3,
+          "reps": "10-12",
+          "rest": "45s",
+          "notes": "Keep elbows stable",
+          "videoUrl": "https://www.youtube.com/watch?v=ykJmrZ5v0Oo"
+        },
+        {
+          "id": "preacher-curl",
+          "name": "Preacher Curl Machine",
+          "sets": 3,
+          "reps": "10-12",
+          "rest": "45s",
+          "notes": "Full extension at bottom",
+          "videoUrl": "https://www.youtube.com/watch?v=fIWP-FRFNU0"
+        },
+        {
+          "id": "tricep-press",
+          "name": "Tricep Press Machine",
+          "sets": 3,
+          "reps": "10-12",
+          "rest": "45s",
+          "notes": "Full extension",
+          "videoUrl": "https://www.youtube.com/watch?v=Y8tJDT0V-f4"
+        },
+        {
+          "id": "tricep-pushdown",
+          "name": "Cable Tricep Pushdowns",
+          "sets": 3,
+          "reps": "12-15",
+          "rest": "45s",
+          "notes": "Keep elbows at sides",
+          "videoUrl": "https://www.youtube.com/watch?v=2-LAMcpzODU"
+        },
+        {
+          "id": "cardio-day3",
+          "name": "Elliptical/Bike",
+          "sets": 1,
+          "reps": "15-20 min",
+          "rest": "-",
+          "notes": "Moderate resistance",
+          "videoUrl": "https://www.youtube.com/watch?v=2Zp_vMp1Dco"
+        }
+      ]
+    },
+    "day4": {
+      "name": "Core & Full Body",
+      "exercises": [
+        {
+          "id": "ab-crunch",
+          "name": "Ab Crunch Machine",
+          "sets": 3,
+          "reps": "15-20",
+          "rest": "45s",
+          "notes": "Controlled motion",
+          "videoUrl": "https://www.youtube.com/watch?v=2G-Baw3DasE"
+        },
+        {
+          "id": "plank",
+          "name": "Plank (on mat)",
+          "sets": 3,
+          "reps": "30-60s",
+          "rest": "60s",
+          "notes": "Keep body straight",
+          "videoUrl": "https://www.youtube.com/watch?v=pvIjsG5Svck"
+        },
+        {
+          "id": "bicycle-crunch",
+          "name": "Bicycle Crunches",
+          "sets": 3,
+          "reps": "20 each",
+          "rest": "45s",
+          "notes": "Slow and controlled",
+          "videoUrl": "https://www.youtube.com/watch?v=Iwyvozckjak"
+        },
+        {
+          "id": "russian-twist",
+          "name": "Russian Twists",
+          "sets": 3,
+          "reps": "20 total",
+          "rest": "45s",
+          "notes": "Can use light weight",
+          "videoUrl": "https://www.youtube.com/watch?v=wkD8rjkodUI"
+        },
+        {
+          "id": "back-extension",
+          "name": "Back Extension Machine",
+          "sets": 3,
+          "reps": "12-15",
+          "rest": "60s",
+          "notes": "Strengthens lower back",
+          "videoUrl": "https://www.youtube.com/watch?v=qtdIjPiXk_Q"
+        },
+        {
+          "id": "smith-lunge",
+          "name": "Smith Machine Lunges",
+          "sets": 2,
+          "reps": "10 each",
+          "rest": "60s",
+          "notes": "Alternate legs",
+          "videoUrl": "https://www.youtube.com/watch?v=0bGT8UxkKm4"
+        },
+        {
+          "id": "wood-chop",
+          "name": "Cable Wood Chops",
+          "sets": 3,
+          "reps": "12 each",
+          "rest": "45s",
+          "notes": "Rotation exercise",
+          "videoUrl": "https://www.youtube.com/watch?v=pAplQXk3dkU"
+        },
+        {
+          "id": "cardio-day4",
+          "name": "Rowing Machine",
+          "sets": 1,
+          "reps": "15 min",
+          "rest": "-",
+          "notes": "Great full-body cardio",
+          "videoUrl": "https://www.youtube.com/watch?v=zQ82RYIFLN8"
+        }
+      ]
+    }
+  }
+}

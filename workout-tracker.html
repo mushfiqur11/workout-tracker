@@ -1,0 +1,1484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Workout Tracker</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Track your strength training workouts with ease">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Workout">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="workout-icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="workout-icon-512.png">
+    <link rel="apple-touch-icon" href="workout-icon-180.png">
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #2a2a2a;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --border: #333333;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .day-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .day-btn {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            color: var(--text-primary);
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .day-btn:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .day-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .day-label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+
+        .day-btn.active .day-label {
+            color: rgba(255,255,255,0.8);
+        }
+
+        .exercise-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .exercise-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            touch-action: pan-y;
+        }
+
+        .exercise-card.swiping {
+            transition: none;
+        }
+
+        .swipe-action-left,
+        .swipe-action-right {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            border-radius: 12px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .swipe-action-left {
+            left: 0;
+            background: var(--danger);
+            padding-left: 10px;
+        }
+
+        .swipe-action-right {
+            right: 0;
+            background: var(--success);
+            padding-right: 10px;
+        }
+
+        .exercise-card.swiping .swipe-action-left,
+        .exercise-card.swiping .swipe-action-right {
+            opacity: 1;
+        }
+
+        .exercise-card:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--accent);
+        }
+
+        .exercise-card.completed {
+            border-color: var(--success);
+            opacity: 0.7;
+        }
+
+        .exercise-card.skipped {
+            border-color: var(--danger);
+            opacity: 0.5;
+        }
+
+        .exercise-card.partial {
+            border-color: var(--warning);
+            opacity: 0.8;
+        }
+
+        .exercise-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .exercise-name {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .exercise-status {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .exercise-card.completed .exercise-status {
+            background: var(--success);
+            border-color: var(--success);
+        }
+
+        .exercise-card.skipped .exercise-status {
+            background: var(--danger);
+            border-color: var(--danger);
+        }
+
+        .exercise-card.partial .exercise-status {
+            background: var(--warning);
+            border-color: var(--warning);
+        }
+
+        .exercise-info {
+            display: flex;
+            gap: 15px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .progress-bar {
+            background: var(--bg-tertiary);
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .modal-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .exercise-detail {
+            margin-bottom: 20px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .detail-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .weight-input-group {
+            margin: 20px 0;
+        }
+
+        .weight-input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .weight-input {
+            width: 100%;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            color: var(--text-primary);
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .weight-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            padding: 14px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-complete {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-partial {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-skip {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+
+        .settings-icon {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 44px;
+            height: 44px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+        }
+
+        .settings-icon:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--accent);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: var(--bg-tertiary);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .hidden-exercise {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .exercise-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .toggle-switch {
+            width: 50px;
+            height: 26px;
+            background: var(--border);
+            border-radius: 13px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: var(--accent);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+            transition: left 0.3s;
+        }
+
+        .toggle-switch.active::after {
+            left: 27px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .nav-tab {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .nav-tab.active {
+            color: var(--text-primary);
+            border-bottom-color: var(--accent);
+        }
+
+        .export-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-button {
+            margin-bottom: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .back-button:hover {
+            color: var(--text-primary);
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="settings-icon" onclick="showSettings()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M12 1v6m0 6v6m-6-6h6m6 0h6m-2.8-5.2l-4.2 4.2m-6 0L4.8 6.8m0 10.4l4.2-4.2m6 0l4.2 4.2"></path>
+        </svg>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>💪 Workout Tracker</h1>
+            <p>Track your strength training journey</p>
+        </div>
+
+        <div id="daySelectionView">
+            <div class="day-selector">
+                <button class="day-btn" onclick="selectDay(1)">
+                    <span class="day-label">DAY 1</span>
+                    Chest & Back
+                </button>
+                <button class="day-btn" onclick="selectDay(2)">
+                    <span class="day-label">DAY 2</span>
+                    Legs
+                </button>
+                <button class="day-btn" onclick="selectDay(3)">
+                    <span class="day-label">DAY 3</span>
+                    Shoulders & Arms
+                </button>
+                <button class="day-btn" onclick="selectDay(4)">
+                    <span class="day-label">DAY 4</span>
+                    Core & Full Body
+                </button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalWorkouts">0</div>
+                    <div class="stat-label">Total Workouts</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="currentStreak">0</div>
+                    <div class="stat-label">Day Streak</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="exerciseListView" style="display: none;">
+            <div class="back-button" onclick="showDaySelection()">
+                ← Back to Days
+            </div>
+            <h2 id="currentDayTitle" style="margin-bottom: 8px; font-size: 22px;"></h2>
+            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px;">
+                Swipe right to complete ✓ | Swipe left to skip ⊘ | Tap for details
+            </p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+            <div class="exercise-list" id="exerciseList"></div>
+        </div>
+    </div>
+
+    <!-- Exercise Detail Modal -->
+    <div class="modal" id="exerciseModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalExerciseName"></h2>
+                <p class="modal-subtitle" id="modalExerciseNotes"></p>
+            </div>
+
+            <div class="exercise-detail">
+                <div class="detail-row">
+                    <span class="detail-label">Sets</span>
+                    <span class="detail-value" id="modalSets"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Reps</span>
+                    <span class="detail-value" id="modalReps"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Rest</span>
+                    <span class="detail-value" id="modalRest"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Last Weight</span>
+                    <span class="detail-value" id="modalLastWeight"></span>
+                </div>
+            </div>
+
+            <div class="weight-input-group">
+                <label>Today's Weight (lbs)</label>
+                <input type="number" class="weight-input" id="currentWeight" placeholder="Enter weight...">
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-complete" onclick="markExercise('completed')">Complete</button>
+                <button class="btn btn-partial" onclick="markExercise('partial')">Partial</button>
+                <button class="btn btn-skip" onclick="markExercise('skipped')">Skip</button>
+            </div>
+
+            <button class="btn btn-secondary" style="width: 100%; margin-bottom: 10px;" onclick="openVideoInYouTube()">
+                📹 Watch Video on YouTube
+            </button>
+
+            <button class="btn btn-secondary" style="width: 100%; margin-top: 10px;" onclick="closeModal()">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Settings</h2>
+            </div>
+
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="switchSettingsTab('visibility')">Exercise Visibility</button>
+                <button class="nav-tab" onclick="switchSettingsTab('data')">Data Management</button>
+            </div>
+
+            <div id="visibilityTab">
+                <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 15px;">
+                    Hide exercises you don't want to see in your workout
+                </p>
+                <div id="exerciseToggles"></div>
+            </div>
+
+            <div id="dataTab" style="display: none;">
+                <div class="export-section">
+                    <h3 style="margin-bottom: 10px; font-size: 16px;">Export Data</h3>
+                    <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 15px;">
+                        Download your workout history as a backup
+                    </p>
+                    <button class="btn btn-secondary" style="width: 100%;" onclick="exportData()">
+                        💾 Export Workout History
+                    </button>
+                </div>
+
+                <div class="export-section">
+                    <h3 style="margin-bottom: 10px; font-size: 16px;">Import Data</h3>
+                    <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 15px;">
+                        Restore from a previous backup
+                    </p>
+                    <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData()">
+                    <button class="btn btn-secondary" style="width: 100%;" onclick="document.getElementById('importFile').click()">
+                        📥 Import Workout History
+                    </button>
+                </div>
+
+                <div class="export-section">
+                    <h3 style="margin-bottom: 10px; font-size: 16px;">Reset All Data</h3>
+                    <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 15px;">
+                        Clear all workout history (cannot be undone)
+                    </p>
+                    <button class="btn btn-skip" style="width: 100%;" onclick="resetAllData()">
+                        🗑️ Reset All Data
+                    </button>
+                </div>
+            </div>
+
+            <button class="btn btn-secondary" style="width: 100%; margin-top: 20px;" onclick="closeSettings()">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Configuration URL - replace this with your GitHub Pages URL
+        const CONFIG_URL = './workout-config.json';
+
+        // State management
+        let workoutConfig = null;
+        let currentDay = null;
+        let currentExercise = null;
+        let workoutHistory = {};
+        let hiddenExercises = [];
+        let stats = { totalWorkouts: 0, currentStreak: 0 };
+
+        // Initialize app
+        async function init() {
+            loadLocalData();
+            await loadWorkoutConfig();
+            renderStats();
+        }
+
+        // Load workout configuration from JSON file
+        async function loadWorkoutConfig() {
+            try {
+                const response = await fetch(CONFIG_URL);
+                workoutConfig = await response.json();
+                console.log('Workout config loaded:', workoutConfig);
+            } catch (error) {
+                console.error('Failed to load workout config:', error);
+                // Fallback to embedded config if fetch fails
+                workoutConfig = getDefaultConfig();
+            }
+        }
+
+        // Load data from localStorage
+        function loadLocalData() {
+            const savedHistory = localStorage.getItem('workoutHistory');
+            if (savedHistory) {
+                workoutHistory = JSON.parse(savedHistory);
+            }
+
+            const savedHidden = localStorage.getItem('hiddenExercises');
+            if (savedHidden) {
+                hiddenExercises = JSON.parse(savedHidden);
+            }
+
+            const savedStats = localStorage.getItem('workoutStats');
+            if (savedStats) {
+                stats = JSON.parse(savedStats);
+            }
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('workoutHistory', JSON.stringify(workoutHistory));
+            localStorage.setItem('hiddenExercises', JSON.stringify(hiddenExercises));
+            localStorage.setItem('workoutStats', JSON.stringify(stats));
+        }
+
+        // Get today's date key
+        function getTodayKey() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        // Select a workout day
+        function selectDay(dayNum) {
+            currentDay = dayNum;
+            document.getElementById('daySelectionView').style.display = 'none';
+            document.getElementById('exerciseListView').style.display = 'block';
+            
+            const dayKey = `day${dayNum}`;
+            const dayData = workoutConfig.days[dayKey];
+            document.getElementById('currentDayTitle').textContent = dayData.name;
+            
+            renderExerciseList();
+        }
+
+        // Show day selection
+        function showDaySelection() {
+            currentDay = null;
+            document.getElementById('daySelectionView').style.display = 'block';
+            document.getElementById('exerciseListView').style.display = 'none';
+        }
+
+        // Render exercise list
+        function renderExerciseList() {
+            const dayKey = `day${currentDay}`;
+            const exercises = workoutConfig.days[dayKey].exercises;
+            const todayKey = getTodayKey();
+            
+            let html = '';
+            let completed = 0;
+            let total = 0;
+
+            exercises.forEach(exercise => {
+                // Skip if exercise is hidden
+                if (hiddenExercises.includes(exercise.id)) return;
+                
+                total++;
+                const status = getExerciseStatus(exercise.id, todayKey);
+                if (status === 'completed') completed++;
+
+                const lastWeight = getLastWeight(exercise.id);
+                const statusIcon = getStatusIcon(status);
+
+                html += `
+                    <div class="exercise-card ${status}" data-exercise-id="${exercise.id}">
+                        <div class="swipe-action-left">⊘ Skip</div>
+                        <div class="swipe-action-right">✓ Done</div>
+                        <div class="exercise-header">
+                            <div class="exercise-name">${exercise.name}</div>
+                            <div class="exercise-status">${statusIcon}</div>
+                        </div>
+                        <div class="exercise-info">
+                            <span>${exercise.sets} sets</span>
+                            <span>${exercise.reps} reps</span>
+                            <span>${lastWeight ? lastWeight + ' lbs' : 'No weight'}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('exerciseList').innerHTML = html;
+            
+            // Update progress bar
+            const progress = total > 0 ? (completed / total) * 100 : 0;
+            document.getElementById('progressFill').style.width = progress + '%';
+
+            // Add swipe listeners to all cards
+            attachSwipeListeners();
+        }
+
+        // Swipe gesture handling
+        function attachSwipeListeners() {
+            const cards = document.querySelectorAll('.exercise-card');
+            
+            cards.forEach(card => {
+                let startX = 0;
+                let currentX = 0;
+                let isDragging = false;
+                const exerciseId = card.dataset.exerciseId;
+
+                card.addEventListener('touchstart', (e) => {
+                    startX = e.touches[0].clientX;
+                    isDragging = true;
+                    card.classList.add('swiping');
+                });
+
+                card.addEventListener('touchmove', (e) => {
+                    if (!isDragging) return;
+                    
+                    currentX = e.touches[0].clientX;
+                    const deltaX = currentX - startX;
+                    
+                    // Apply transform
+                    card.style.transform = `translateX(${deltaX}px)`;
+                    
+                    // Show appropriate action indicator
+                    if (deltaX > 50) {
+                        card.querySelector('.swipe-action-right').style.opacity = '1';
+                        card.querySelector('.swipe-action-left').style.opacity = '0';
+                    } else if (deltaX < -50) {
+                        card.querySelector('.swipe-action-left').style.opacity = '1';
+                        card.querySelector('.swipe-action-right').style.opacity = '0';
+                    } else {
+                        card.querySelector('.swipe-action-left').style.opacity = '0';
+                        card.querySelector('.swipe-action-right').style.opacity = '0';
+                    }
+                });
+
+                card.addEventListener('touchend', (e) => {
+                    if (!isDragging) return;
+                    
+                    const deltaX = currentX - startX;
+                    
+                    // Swipe right = complete
+                    if (deltaX > 100) {
+                        quickMarkExercise(exerciseId, 'completed');
+                    } 
+                    // Swipe left = skip
+                    else if (deltaX < -100) {
+                        quickMarkExercise(exerciseId, 'skipped');
+                    }
+                    
+                    // Reset card position
+                    card.style.transform = '';
+                    card.classList.remove('swiping');
+                    card.querySelector('.swipe-action-left').style.opacity = '0';
+                    card.querySelector('.swipe-action-right').style.opacity = '0';
+                    
+                    isDragging = false;
+                    currentX = 0;
+                });
+
+                // Click to open modal (only if not swiping)
+                card.addEventListener('click', (e) => {
+                    if (Math.abs(currentX - startX) < 10) {
+                        openExerciseModal(exerciseId);
+                    }
+                });
+            });
+        }
+
+        // Quick mark exercise without opening modal
+        function quickMarkExercise(exerciseId, status) {
+            const todayKey = getTodayKey();
+            
+            if (!workoutHistory[todayKey]) {
+                workoutHistory[todayKey] = {
+                    day: currentDay,
+                    exercises: {}
+                };
+            }
+
+            // Get last weight if completing
+            const lastWeight = status === 'completed' ? getLastWeight(exerciseId) : null;
+
+            workoutHistory[todayKey].exercises[exerciseId] = {
+                status: status,
+                weight: lastWeight, // Use last weight or null
+                timestamp: new Date().toISOString()
+            };
+
+            updateStats();
+            saveData();
+            renderExerciseList();
+            renderStats();
+        }
+
+        // Get exercise status for today
+        function getExerciseStatus(exerciseId, dateKey) {
+            if (!workoutHistory[dateKey]) return '';
+            const exercise = workoutHistory[dateKey].exercises?.[exerciseId];
+            return exercise?.status || '';
+        }
+
+        // Get last recorded weight
+        function getLastWeight(exerciseId) {
+            // Search through history for most recent weight
+            const dates = Object.keys(workoutHistory).sort().reverse();
+            for (const date of dates) {
+                const weight = workoutHistory[date].exercises?.[exerciseId]?.weight;
+                if (weight) return weight;
+            }
+            return null;
+        }
+
+        // Get status icon
+        function getStatusIcon(status) {
+            switch(status) {
+                case 'completed': return '✓';
+                case 'partial': return '◐';
+                case 'skipped': return '⊘';
+                default: return '';
+            }
+        }
+
+        // Open exercise detail modal
+        function openExerciseModal(exerciseId) {
+            currentExercise = exerciseId;
+            const dayKey = `day${currentDay}`;
+            const exercise = workoutConfig.days[dayKey].exercises.find(e => e.id === exerciseId);
+            
+            document.getElementById('modalExerciseName').textContent = exercise.name;
+            document.getElementById('modalExerciseNotes').textContent = exercise.notes;
+            document.getElementById('modalSets').textContent = exercise.sets;
+            document.getElementById('modalReps').textContent = exercise.reps;
+            document.getElementById('modalRest').textContent = exercise.rest;
+            
+            const lastWeight = getLastWeight(exerciseId);
+            document.getElementById('modalLastWeight').textContent = lastWeight ? lastWeight + ' lbs' : 'Not set';
+            
+            // Set current weight input
+            const todayKey = getTodayKey();
+            const todayWeight = workoutHistory[todayKey]?.exercises?.[exerciseId]?.weight;
+            document.getElementById('currentWeight').value = todayWeight || lastWeight || '';
+            
+            // Store video URL for later
+            document.getElementById('exerciseModal').dataset.videoUrl = exercise.videoUrl;
+            
+            document.getElementById('exerciseModal').classList.add('active');
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('exerciseModal').classList.remove('active');
+        }
+
+        // Open video in YouTube (avoids embedding restrictions)
+        function openVideoInYouTube() {
+            const videoUrl = document.getElementById('exerciseModal').dataset.videoUrl;
+            window.open(videoUrl, '_blank');
+        }
+
+        // Mark exercise with status
+        function markExercise(status) {
+            const todayKey = getTodayKey();
+            const weight = parseFloat(document.getElementById('currentWeight').value) || null;
+            
+            if (!workoutHistory[todayKey]) {
+                workoutHistory[todayKey] = {
+                    day: currentDay,
+                    exercises: {}
+                };
+            }
+
+            workoutHistory[todayKey].exercises[currentExercise] = {
+                status: status,
+                weight: weight,
+                timestamp: new Date().toISOString()
+            };
+
+            // Update stats
+            updateStats();
+            
+            saveData();
+            renderExerciseList();
+            renderStats();
+            closeModal();
+        }
+
+        // Update workout stats
+        function updateStats() {
+            // Count total workout days
+            stats.totalWorkouts = Object.keys(workoutHistory).length;
+            
+            // Calculate streak
+            const dates = Object.keys(workoutHistory).sort().reverse();
+            let streak = 0;
+            const today = getTodayKey();
+            
+            for (let i = 0; i < dates.length; i++) {
+                const expectedDate = new Date();
+                expectedDate.setDate(expectedDate.getDate() - i);
+                const expectedKey = expectedDate.toISOString().split('T')[0];
+                
+                if (dates[i] === expectedKey) {
+                    streak++;
+                } else {
+                    break;
+                }
+            }
+            
+            stats.currentStreak = streak;
+        }
+
+        // Render stats
+        function renderStats() {
+            document.getElementById('totalWorkouts').textContent = stats.totalWorkouts;
+            document.getElementById('currentStreak').textContent = stats.currentStreak;
+        }
+
+        // Settings functions
+        function showSettings() {
+            renderExerciseToggles();
+            document.getElementById('settingsModal').classList.add('active');
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.remove('active');
+            if (currentDay) {
+                renderExerciseList();
+            }
+        }
+
+        function switchSettingsTab(tab) {
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (tab === 'visibility') {
+                document.getElementById('visibilityTab').style.display = 'block';
+                document.getElementById('dataTab').style.display = 'none';
+            } else {
+                document.getElementById('visibilityTab').style.display = 'none';
+                document.getElementById('dataTab').style.display = 'block';
+            }
+        }
+
+        function renderExerciseToggles() {
+            let html = '';
+            
+            // Collect all exercises from all days
+            Object.keys(workoutConfig.days).forEach(dayKey => {
+                const day = workoutConfig.days[dayKey];
+                html += `<h3 style="margin: 15px 0 10px 0; font-size: 14px; color: var(--text-secondary);">${day.name}</h3>`;
+                
+                day.exercises.forEach(exercise => {
+                    const isHidden = hiddenExercises.includes(exercise.id);
+                    html += `
+                        <div class="exercise-toggle">
+                            <span>${exercise.name}</span>
+                            <div class="toggle-switch ${!isHidden ? 'active' : ''}" onclick="toggleExerciseVisibility('${exercise.id}')"></div>
+                        </div>
+                    `;
+                });
+            });
+            
+            document.getElementById('exerciseToggles').innerHTML = html;
+        }
+
+        function toggleExerciseVisibility(exerciseId) {
+            const index = hiddenExercises.indexOf(exerciseId);
+            if (index > -1) {
+                hiddenExercises.splice(index, 1);
+            } else {
+                hiddenExercises.push(exerciseId);
+            }
+            saveData();
+            renderExerciseToggles();
+        }
+
+        // Export data
+        function exportData() {
+            const data = {
+                workoutHistory: workoutHistory,
+                hiddenExercises: hiddenExercises,
+                stats: stats,
+                exportDate: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `workout-backup-${getTodayKey()}.json`;
+            a.click();
+        }
+
+        // Import data
+        function importData() {
+            const file = document.getElementById('importFile').files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if (confirm('This will replace all current data. Continue?')) {
+                        workoutHistory = data.workoutHistory || {};
+                        hiddenExercises = data.hiddenExercises || [];
+                        stats = data.stats || { totalWorkouts: 0, currentStreak: 0 };
+                        
+                        saveData();
+                        renderStats();
+                        alert('Data imported successfully!');
+                    }
+                } catch (error) {
+                    alert('Invalid backup file');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Reset all data
+        function resetAllData() {
+            if (confirm('Are you sure? This will delete all workout history and cannot be undone.')) {
+                if (confirm('Really sure? Last chance!')) {
+                    workoutHistory = {};
+                    hiddenExercises = [];
+                    stats = { totalWorkouts: 0, currentStreak: 0 };
+                    saveData();
+                    renderStats();
+                    alert('All data has been reset');
+                    closeSettings();
+                }
+            }
+        }
+
+        // Default embedded config (fallback)
+        function getDefaultConfig() {
+            return {
+                "version": "1.0.0",
+                "days": {
+                    "day1": {
+                        "name": "Chest & Back",
+                        "exercises": [
+                            {
+                                "id": "chest-press",
+                                "name": "Chest Press Machine",
+                                "sets": 3,
+                                "reps": "10-12",
+                                "rest": "60s",
+                                "notes": "Focus on controlled movement",
+                                "videoUrl": "https://www.youtube.com/watch?v=xUm0BiZCWlQ"
+                            },
+                            {
+                                "id": "incline-chest",
+                                "name": "Incline Chest Press Machine",
+                                "sets": 3,
+                                "reps": "10-12",
+                                "rest": "60s",
+                                "notes": "Targets upper chest",
+                                "videoUrl": "https://www.youtube.com/watch?v=IP4oeKxTDsE"
+                            },
+                            {
+                                "id": "pec-deck",
+                                "name": "Pec Deck Fly Machine",
+                                "sets": 3,
+                                "reps": "12-15",
+                                "rest": "45s",
+                                "notes": "Squeeze at contraction",
+                                "videoUrl": "https://www.youtube.com/watch?v=Z57CtFmRMxA"
+                            },
+                            {
+                                "id": "lat-pulldown",
+                                "name": "Lat Pulldown Machine",
+                                "sets": 3,
+                                "reps": "10-12",
+                                "rest": "60s",
+                                "notes": "Pull to upper chest",
+                                "videoUrl": "https://www.youtube.com/watch?v=CAwf7n6Luuc"
+                            },
+                            {
+                                "id": "cable-row",
+                                "name": "Seated Cable Row",
+                                "sets": 3,
+                                "reps": "10-12",
+                                "rest": "60s",
+                                "notes": "Squeeze shoulder blades",
+                                "videoUrl": "https://www.youtube.com/watch?v=GZbfZ033f74"
+                            },
+                            {
+                                "id": "assisted-pullup",
+                                "name": "Assisted Pull-up Machine",
+                                "sets": 2,
+                                "reps": "8-10",
+                                "rest": "90s",
+                                "notes": "Use assistance as needed",
+                                "videoUrl": "https://www.youtube.com/watch?v=8jyhJ6TiUPA"
+                            },
+                            {
+                                "id": "cardio-day1",
+                                "name": "Treadmill Walk/Jog",
+                                "sets": 1,
+                                "reps": "15-20 min",
+                                "rest": "-",
+                                "notes": "Moderate pace, 3.0-4.5 mph",
+                                "videoUrl": "https://www.youtube.com/watch?v=kVnyY17VS9Y"
+                            }
+                        ]
+                    },
+                    "day2": {
+                        "name": "Legs",
+                        "exercises": [
+                            {
+                                "id": "leg-press",
+                                "name": "Leg Press Machine",
+                                "sets": 3,
+                                "reps": "12-15",
+                                "rest": "90s",
+                                "notes": "Feet shoulder-width apart",
+                                "videoUrl": "https://www.youtube.com/watch?v=IZxyjW7MPJQ"
+                            },
+                            {
+                                "id": "leg-extension",
+                                "name": "Leg Extension Machine",
+                                "sets": 3,
+                                "reps": "12-15",
+                                "rest": "60s",
+                                "notes": "Control the descent",
+                                "videoUrl": "https://www.youtube.com/watch?v=YyvSfVjQeL0"
+                            },
+                            {
+                                "id": "leg-curl",
+                                "name": "Leg Curl Machine",
+                                "sets": 3,
+                                "reps": "12-15",
+                                "rest": "60s",
+                                "notes": "Keep hips down",
+                                "videoUrl": "https://www.youtube.com/watch?v=ELOCsoDSmrg"
+                            },
+                            {
+                                "id": "smith-squat",
+                                "name": "Smith Machine Squats",
+                                "sets": 3,
+                                "reps": "10-12",
+                                "rest": "90s",
+                                "notes": "Feet slightly forward",
+                                "videoUrl": "https://www.youtube.com/watch?v=DzZdIJFTnRw"
+                            },
+                            {
+                                "id": "hip-abductor",
+                                "name": "Hip Abductor Machine",
+                                "sets": 3,
+                                "reps": "15-20",
+                                "rest": "45s",
+                                "notes": "Strengthens outer thighs",
+                                "videoUrl": "https://www.youtube.com/watch?v=7vXEJ5Vev9c"
+                            },
+                            {
+                                "id": "hip-adductor",
+                                "name": "Hip Adductor Machine",
+                                "sets": 3,
+                                "reps": "15-20",
+                                "rest": "45s",
+                                "notes": "Strengthens inner thighs",
+                                "videoUrl": "https://www.youtube.com/watch?v=w_zYzNXI06U"
+                            },
+                            {
+                                "id": "calf-raises",
+                                "name": "Standing Calf Raises",
+                                "sets": 3,
+                                "reps": "15-20",
+                                "rest": "45s",
+                                "notes": "Full range of motion",
+                                "videoUrl": "https://www.youtube.com/watch?v=gwLzBJYoWlI"
+                            }
+                        ]
+                    },
+                    "day3": {
+                        "name": "Shoulders & Arms",
+                        "exercises": [
+                            {
+                                "id": "shoulder-press",
+                                "name": "Shoulder Press Machine",
+                                "sets": 3,
+                                "reps": "10-12",
+                                "rest": "60s",
+                                "notes": "Press straight up",
+                                "videoUrl": "https://www.youtube.com/watch?v=V60jYHzOxdU"
+                            },
+                            {
+                                "id": "lateral-raise",
+                                "name": "Lateral Raise Machine",
+                                "sets": 3,
+                                "reps": "12-15",
+                                "rest": "45s",
+                                "notes": "Lift to shoulder height",
+                                "videoUrl": "https://www.youtube.com/watch?v=3VcKaXpzqRo"
+                            },
+                            {
+                                "id": "rear-delt",
+                                "name": "Rear Delt Fly Machine",
+                                "sets": 3,
+                                "reps": "12-15",
+                                "rest": "45s",
+                                "notes": "Focus on rear shoulders",
+                                "videoUrl": "https://www.youtube.com/watch?v=T0vV_2dKr4s"
+                            },
+                            {
+                                "id": "bicep-curl",
+                                "name": "Dumbbell Bicep Curls",
+                                "sets": 3,
+                                "reps": "10-12",
+                                "rest": "45s",
+                                "notes": "Keep elbows stable",
+                                "videoUrl": "https://www.youtube.com/watch?v=ykJmrZ5v0Oo"
+                            },
+                            {
+                                "id": "preacher-curl",
+                                "name": "Preacher Curl Machine",
+                                "sets": 3,
+                                "reps": "10-12",
+                                "rest": "45s",
+                                "notes": "Full extension at bottom",
+                                "videoUrl": "https://www.youtube.com/watch?v=fIWP-FRFNU0"
+                            },
+                            {
+                                "id": "tricep-press",
+                                "name": "Tricep Press Machine",
+                                "sets": 3,
+                                "reps": "10-12",
+                                "rest": "45s",
+                                "notes": "Full extension",
+                                "videoUrl": "https://www.youtube.com/watch?v=Y8tJDT0V-f4"
+                            },
+                            {
+                                "id": "tricep-pushdown",
+                                "name": "Cable Tricep Pushdowns",
+                                "sets": 3,
+                                "reps": "12-15",
+                                "rest": "45s",
+                                "notes": "Keep elbows at sides",
+                                "videoUrl": "https://www.youtube.com/watch?v=2-LAMcpzODU"
+                            },
+                            {
+                                "id": "cardio-day3",
+                                "name": "Elliptical/Bike",
+                                "sets": 1,
+                                "reps": "15-20 min",
+                                "rest": "-",
+                                "notes": "Moderate resistance",
+                                "videoUrl": "https://www.youtube.com/watch?v=2Zp_vMp1Dco"
+                            }
+                        ]
+                    },
+                    "day4": {
+                        "name": "Core & Full Body",
+                        "exercises": [
+                            {
+                                "id": "ab-crunch",
+                                "name": "Ab Crunch Machine",
+                                "sets": 3,
+                                "reps": "15-20",
+                                "rest": "45s",
+                                "notes": "Controlled motion",
+                                "videoUrl": "https://www.youtube.com/watch?v=2G-Baw3DasE"
+                            },
+                            {
+                                "id": "plank",
+                                "name": "Plank (on mat)",
+                                "sets": 3,
+                                "reps": "30-60s",
+                                "rest": "60s",
+                                "notes": "Keep body straight",
+                                "videoUrl": "https://www.youtube.com/watch?v=pvIjsG5Svck"
+                            },
+                            {
+                                "id": "bicycle-crunch",
+                                "name": "Bicycle Crunches",
+                                "sets": 3,
+                                "reps": "20 each",
+                                "rest": "45s",
+                                "notes": "Slow and controlled",
+                                "videoUrl": "https://www.youtube.com/watch?v=Iwyvozckjak"
+                            },
+                            {
+                                "id": "russian-twist",
+                                "name": "Russian Twists",
+                                "sets": 3,
+                                "reps": "20 total",
+                                "rest": "45s",
+                                "notes": "Can use light weight",
+                                "videoUrl": "https://www.youtube.com/watch?v=wkD8rjkodUI"
+                            },
+                            {
+                                "id": "back-extension",
+                                "name": "Back Extension Machine",
+                                "sets": 3,
+                                "reps": "12-15",
+                                "rest": "60s",
+                                "notes": "Strengthens lower back",
+                                "videoUrl": "https://www.youtube.com/watch?v=qtdIjPiXk_Q"
+                            },
+                            {
+                                "id": "smith-lunge",
+                                "name": "Smith Machine Lunges",
+                                "sets": 2,
+                                "reps": "10 each",
+                                "rest": "60s",
+                                "notes": "Alternate legs",
+                                "videoUrl": "https://www.youtube.com/watch?v=0bGT8UxkKm4"
+                            },
+                            {
+                                "id": "wood-chop",
+                                "name": "Cable Wood Chops",
+                                "sets": 3,
+                                "reps": "12 each",
+                                "rest": "45s",
+                                "notes": "Rotation exercise",
+                                "videoUrl": "https://www.youtube.com/watch?v=pAplQXk3dkU"
+                            },
+                            {
+                                "id": "cardio-day4",
+                                "name": "Rowing Machine",
+                                "sets": 1,
+                                "reps": "15 min",
+                                "rest": "-",
+                                "notes": "Great full-body cardio",
+                                "videoUrl": "https://www.youtube.com/watch?v=zQ82RYIFLN8"
+                            }
+                        ]
+                    }
+                }
+            };
+        }
+
+        // Initialize on page load
+        init();
+    </script>
+</body>
+</html>
