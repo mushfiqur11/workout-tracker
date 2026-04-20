@@ -282,6 +282,11 @@
             border: 1px solid var(--border);
         }
 
+        .modal-header button:hover {
+            background: var(--bg-tertiary) !important;
+            color: var(--text-primary) !important;
+        }
+
         .modal-header {
             margin-bottom: 20px;
         }
@@ -672,11 +677,12 @@
     </div>
 
     <!-- Exercise Detail Modal -->
-    <div class="modal" id="exerciseModal">
+    <div class="modal" id="exerciseModal" onclick="if(event.target === this) closeModal()">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header" style="position: relative;">
                 <h2 class="modal-title" id="modalExerciseName"></h2>
                 <p class="modal-subtitle" id="modalExerciseNotes"></p>
+                <button onclick="closeModal()" style="position: absolute; top: 0; right: 0; background: none; border: none; color: var(--text-secondary); font-size: 28px; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px;">×</button>
             </div>
 
             <div class="exercise-detail">
@@ -720,10 +726,11 @@
     </div>
 
     <!-- Settings Modal -->
-    <div class="modal" id="settingsModal">
+    <div class="modal" id="settingsModal" onclick="if(event.target === this) closeSettings()">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header" style="position: relative;">
                 <h2 class="modal-title">Settings</h2>
+                <button onclick="closeSettings()" style="position: absolute; top: 0; right: 0; background: none; border: none; color: var(--text-secondary); font-size: 28px; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px;">×</button>
             </div>
 
             <div class="nav-tabs">
@@ -778,10 +785,11 @@
     </div>
 
     <!-- Analytics Modal -->
-    <div class="modal" id="analyticsModal">
+    <div class="modal" id="analyticsModal" onclick="if(event.target === this) closeAnalytics()">
         <div class="modal-content" style="max-width: 700px;">
-            <div class="modal-header">
+            <div class="modal-header" style="position: relative;">
                 <h2 class="modal-title">📊 Analytics & Progress</h2>
+                <button onclick="closeAnalytics()" style="position: absolute; top: 0; right: 0; background: none; border: none; color: var(--text-secondary); font-size: 28px; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px;">×</button>
             </div>
 
             <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 20px;">
@@ -848,11 +856,12 @@
     </div>
 
     <!-- Body Weight Logger Modal -->
-    <div class="modal" id="weightLoggerModal">
+    <div class="modal" id="weightLoggerModal" onclick="if(event.target === this) closeWeightLogger()">
         <div class="modal-content" style="max-width: 400px;">
-            <div class="modal-header">
+            <div class="modal-header" style="position: relative;">
                 <h2 class="modal-title">⚖️ Log Body Weight</h2>
                 <p class="modal-subtitle">Track your weight daily</p>
+                <button onclick="closeWeightLogger()" style="position: absolute; top: 0; right: 0; background: none; border: none; color: var(--text-secondary); font-size: 28px; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px;">×</button>
             </div>
 
             <div style="background: var(--bg-tertiary); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
